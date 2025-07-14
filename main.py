@@ -30,7 +30,7 @@ if uploaded_file is not None:
         df = df[df['Gross Revenue'].notna()]
 
         # Filter by RPM and Gross Revenue
-        filtered_df = df[(df['RPM'] <= 0.001) & (df['Gross Revenue'] <= 1)]
+        filtered_df = df[(df['RPM'] >= 0.001) & (df['Gross Revenue'] >= 1)]
 
         # Clean Date column: remove time part
         filtered_df['Date'] = pd.to_datetime(filtered_df['Date']).dt.date
