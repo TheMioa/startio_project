@@ -35,9 +35,13 @@ if uploaded_file is not None:
         "Count": bin_counts.values
     })
     
-    fig = px.bar(hist_df, x="Discrepancy Range", y="Count",
-                 labels={'Count': 'Row count', 'Discrepancy Range': 'Discrepancy range'},
-                 title="Distribution of Impression Discrepancies")
+    fig = px.bar(
+        hist_df,
+        x="Discrepancy Range",
+        y="Count",
+        labels={'Count': 'Row count', 'Discrepancy Range': 'Discrepancy range'},
+        title="Distribution of Impression Discrepancies"
+    )
     fig.update_layout(xaxis_tickangle=-45)
     
     st.plotly_chart(fig, use_container_width=True)
