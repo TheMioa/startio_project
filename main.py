@@ -5,34 +5,39 @@ from io import BytesIO
 st.title("Product Filter and Grouping App")
 
 st.markdown("""
-This app allows you to upload a CSV file, filters products where:
-- RPM ≤ 0.001
-- Gross Revenue ≤ 1 USD
-
-Then it groups the results by **Campaign ID** and provides a downloadable CSV.
+Upload a CSV file. The app will:
+- Filter products where:
+  - RPM ≤ 0.001
+  - Gross Revenue ≤ 1 USD
+  - Gross Revenue is not blank
+- Group the results by **Campaign ID**
+- Provide a downloadable filtered CSV.
 """)
 
-# File upload
 uploaded_file = st.file_uploader("Upload your CSV file", type=["csv"])
 
 if uploaded_file is not None:
-    df = pd.read_csv(uploaded_file, sep=None, engine='python')  # auto-detect separator
+    df = pd.read_csv(uploaded_file, sep=None, engine='python')
 
     st.subheader("Original Data Preview")
     st.dataframe(df.head())
 
-    # Ensure correct columns exist
-    if {'RPM', 'Gross Revenue', 'Campaign ID'}.issubset(df.columns):
-        # Filter condition
+    # Ensure required columns exist
+    required_cols = {'RPM', 'Gross Revenue', 'Campaign ID'}
+    if required_cols.issubset(df.columns):
+        # Remove rows where Gross Revenue is blank or NaN
+        df = df[df['Gross Revenue'].notna()]
+
+        # Filter by RPM and Gross Revenue
         filtered_df = df[(df['RPM'] <= 0.001) & (df['Gross Revenue'] <= 1)]
 
-        # Group by Campaign ID
+        # Group by Campaign ID (simply for organization, not aggregation)
         grouped_df = filtered_df.groupby('Campaign ID').apply(lambda x: x).reset_index(drop=True)
 
         st.subheader("Filtered and Grouped Data Preview")
         st.dataframe(grouped_df)
 
-        # Prepare downloadable file
+        # Prepare CSV for download
         def convert_df_to_csv(df):
             return df.to_csv(index=False).encode('utf-8')
 
@@ -45,6 +50,6 @@ if uploaded_file is not None:
             mime='text/csv',
         )
     else:
-        st.error("The uploaded file does not contain required columns: RPM, Gross Revenue, Campaign ID")
+        st.error(f"The uploaded file must contain the following columns: {', '.join(required_cols)}")
 else:
     st.info("Please upload a CSV file to begin.")
