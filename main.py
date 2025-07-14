@@ -1,8 +1,7 @@
 import streamlit as st
 import pandas as pd
-from io import BytesIO
 
-st.title("Product Filter and Grouping App")
+st.title("Product Filter, Clean, and Group App")
 
 st.markdown("""
 Upload a CSV file. The app will:
@@ -10,7 +9,9 @@ Upload a CSV file. The app will:
   - RPM ≤ 0.001
   - Gross Revenue ≤ 1 USD
   - Gross Revenue is not blank
-- Group the results by **Campaign ID**
+- Clean the Date field to only show date (remove time)
+- Move **Campaign ID** to the first column
+- Sort output by **Campaign ID ascending**
 - Provide a downloadable filtered CSV.
 """)
 
@@ -23,25 +24,34 @@ if uploaded_file is not None:
     st.dataframe(df.head())
 
     # Ensure required columns exist
-    required_cols = {'RPM', 'Gross Revenue', 'Campaign ID'}
+    required_cols = {'RPM', 'Gross Revenue', 'Campaign ID', 'Date'}
     if required_cols.issubset(df.columns):
         # Remove rows where Gross Revenue is blank or NaN
         df = df[df['Gross Revenue'].notna()]
 
         # Filter by RPM and Gross Revenue
-        filtered_df = df[(df['RPM'] >= 0.001) & (df['Gross Revenue'] >= 1)]
+        filtered_df = df[(df['RPM'] <= 0.001) & (df['Gross Revenue'] <= 1)]
 
-        # Group by Campaign ID (simply for organization, not aggregation)
-        grouped_df = filtered_df.groupby('Campaign ID').apply(lambda x: x).reset_index(drop=True)
+        # Clean Date column: remove time part
+        filtered_df['Date'] = pd.to_datetime(filtered_df['Date']).dt.date
 
-        st.subheader("Filtered and Grouped Data Preview")
-        st.dataframe(grouped_df)
+        # Move Campaign ID to the first column
+        cols = filtered_df.columns.tolist()
+        cols.remove('Campaign ID')
+        cols = ['Campaign ID'] + cols
+        filtered_df = filtered_df[cols]
+
+        # Sort by Campaign ID ascending
+        filtered_df = filtered_df.sort_values(by='Campaign ID', ascending=True)
+
+        st.subheader("Filtered, Cleaned, and Sorted Data Preview")
+        st.dataframe(filtered_df)
 
         # Prepare CSV for download
         def convert_df_to_csv(df):
             return df.to_csv(index=False).encode('utf-8')
 
-        csv = convert_df_to_csv(grouped_df)
+        csv = convert_df_to_csv(filtered_df)
 
         st.download_button(
             label="Download filtered CSV",
