@@ -13,8 +13,8 @@ if uploaded_file is not None:
     # Check required columns
     if 'Advertiser' in df.columns and 'IVT (%)' in df.columns:
         # Compute quartiles
-        quartiles = df.groupby('Advertiser')['IVT (%)'].quantile([0.5, 0.75]).unstack()
-        quartiles.columns = ['Median (Q2)', '3rd Quartile (Q3)']
+        quartiles = df.groupby('Advertiser')['IVT (%)'].quantile([0.65, 0.8]).unstack()
+        quartiles.columns = ['0.65', '0.8']
         quartiles = quartiles.reset_index()
 
         # Show quartile summary table for verification
@@ -28,8 +28,8 @@ if uploaded_file is not None:
         def flag_ivt(row):
             adv = row['Advertiser']
             ivt = row['IVT (%)']
-            median_ivt = quartile_dict[adv]['Median (Q2)']
-            q3_ivt = quartile_dict[adv]['3rd Quartile (Q3)']
+            median_ivt = quartile_dict[adv]['0.65']
+            q3_ivt = quartile_dict[adv]['0.8']
             if ivt > q3_ivt:
                 return "Critical High IVT"
             elif ivt > median_ivt:
