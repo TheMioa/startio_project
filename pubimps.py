@@ -1,7 +1,7 @@
 import streamlit as st
 import pandas as pd
 import numpy as np
-import matplotlib.pyplot as plt
+import plotly.express as px
 
 st.title("Impression Discrepancy Checker")
 
@@ -22,14 +22,25 @@ if uploaded_file is not None:
     df['Discrepancy'] = 1 - (df['Publisher Impressions'] / df['Advertiser Impressions'])
     
     st.subheader("Discrepancy Distribution")
-    # Plot histogram with 5% bins
-    fig, ax = plt.subplots()
-    bins = np.arange(-1, 1.05, 0.05)  # From -100% to +100% in 5% increments
-    ax.hist(df['Discrepancy'], bins=bins, edgecolor='black')
-    ax.set_xlabel('Discrepancy (1 - PubImp/AdvImp)')
-    ax.set_ylabel('Count')
-    ax.set_title('Distribution of Impression Discrepancies')
-    st.pyplot(fig)
+    
+    # Create histogram bins every 5%
+    bins = np.arange(-1, 1.05, 0.05)
+    df['Discrepancy Bin'] = pd.cut(df['Discrepancy'], bins=bins)
+    
+    bin_counts = df['Discrepancy Bin'].value_counts().sort_index()
+    bin_labels = [f"{round(interval.left*100)}% to {round(interval.right*100)}%" for interval in bin_counts.index]
+    
+    hist_df = pd.DataFrame({
+        "Discrepancy Range": bin_labels,
+        "Count": bin_counts.values
+    })
+    
+    fig = px.bar(hist_df, x="Discrepancy Range", y="Count",
+                 labels={'Count': 'Row count', 'Discrepancy Range': 'Discrepancy range'},
+                 title="Distribution of Impression Discrepancies")
+    fig.update_layout(xaxis_tickangle=-45)
+    
+    st.plotly_chart(fig, use_container_width=True)
     
     # User toggles
     st.subheader("Flagged rows")
