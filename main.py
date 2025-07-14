@@ -1,18 +1,21 @@
 import streamlit as st
 import pandas as pd
 
-st.title("Product Filter, Clean, and Group App")
+st.title("Product Filter, Clean, Group and Column Management App")
 
 st.markdown("""
 Upload a CSV file. The app will:
 - Filter products where:
-  - RPM ≤ 0.001
-  - Gross Revenue ≤ 1 USD
+  - RPM > 0.001
+  - Gross Revenue > 1 USD
   - Gross Revenue is not blank
-- Clean the Date field to only show date (remove time)
-- Move **Campaign ID** to the first column
-- Sort output by **Campaign ID ascending**
-- Provide a downloadable filtered CSV.
+- Clean Date to show only the date (no time)
+- Optional triggers to remove columns before grouping:
+  - Remove **Package** and **Product**
+  - Remove **Date**
+- Move **Campaign ID** to first column
+- Sort by **Campaign ID ascending**
+- Provide downloadable filtered CSV.
 """)
 
 uploaded_file = st.file_uploader("Upload your CSV file", type=["csv"])
@@ -29,22 +32,40 @@ if uploaded_file is not None:
         # Remove rows where Gross Revenue is blank or NaN
         df = df[df['Gross Revenue'].notna()]
 
-        # Filter by RPM and Gross Revenue
-        filtered_df = df[(df['RPM'] >= 0.001) & (df['Gross Revenue'] >= 1)]
+        # Filter: keep only rows where RPM > 0.001 and Gross Revenue > 1
+        filtered_df = df[(df['RPM'] > 0.001) & (df['Gross Revenue'] > 1)].copy()
 
         # Clean Date column: remove time part
         filtered_df['Date'] = pd.to_datetime(filtered_df['Date']).dt.date
 
-        # Move Campaign ID to the first column
-        cols = filtered_df.columns.tolist()
-        cols.remove('Campaign ID')
-        cols = ['Campaign ID'] + cols
-        filtered_df = filtered_df[cols]
+        st.subheader("Configure Output Columns")
+
+        # Trigger 1: Remove Package and Product
+        remove_package_product = st.checkbox("Remove 'Package' and 'Product' columns")
+
+        if remove_package_product:
+            cols_to_remove = [col for col in ['Package', 'Product'] if col in filtered_df.columns]
+            filtered_df = filtered_df.drop(columns=cols_to_remove)
+            st.info(f"Removed columns: {', '.join(cols_to_remove)}")
+
+        # Trigger 2: Remove Date
+        remove_date = st.checkbox("Remove 'Date' column")
+
+        if remove_date and 'Date' in filtered_df.columns:
+            filtered_df = filtered_df.drop(columns=['Date'])
+            st.info("Removed column: Date")
+
+        # Move Campaign ID to first column
+        if 'Campaign ID' in filtered_df.columns:
+            cols = filtered_df.columns.tolist()
+            cols.remove('Campaign ID')
+            cols = ['Campaign ID'] + cols
+            filtered_df = filtered_df[cols]
 
         # Sort by Campaign ID ascending
         filtered_df = filtered_df.sort_values(by='Campaign ID', ascending=True)
 
-        st.subheader("Filtered, Cleaned, and Sorted Data Preview")
+        st.subheader("Filtered, Cleaned, Sorted Data Preview")
         st.dataframe(filtered_df)
 
         # Prepare CSV for download
