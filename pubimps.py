@@ -21,7 +21,8 @@ if uploaded_file is not None:
     # Calculate discrepancy: 1 - (PubImp / AdvImp)
     df['Discrepancy'] = 1 - (df['Publisher Impressions'] / df['Advertiser Impressions'])
     
-    st.subheader("Discrepancy Distribution")
+    # Show graph FIRST (before any filtering)
+    st.subheader("Discrepancy Distribution (Full dataset)")
     
     # Create histogram bins every 5%
     bins = np.arange(-1, 1.05, 0.05)
@@ -46,7 +47,7 @@ if uploaded_file is not None:
     
     st.plotly_chart(fig, use_container_width=True)
     
-    # User toggles
+    # Then show filtering toggles + flagged rows
     st.subheader("Flagged rows")
     show_under = st.checkbox("Show Under-delivery (>10%)", value=True)
     show_over = st.checkbox("Show Over-delivery (<-10%)", value=True)
